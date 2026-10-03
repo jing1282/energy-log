@@ -1,0 +1,150 @@
+# 能量记录
+
+一个 iPhone 优先的个人精力记录 PWA。每天花一两分钟分层打卡,看见自己的波动,找到更适合自己的节奏。数据只保存在本机,没有账号,也没有后端。
+
+完整的目标、设计原则和各页面规则见 [`docs/PLAN.md`](docs/PLAN.md)。本应用是自我觉察工具,不替代体检和就医。
+
+## 功能
+
+- **今日**(首页,只放要输入的项目):日期旁显示时令(如"秋 · 秋分")。顺序是身体觉察(冷热体感五档、燥湿体感多选、胃部感受自由文字、自定义身体标签、生理周期四阶段)、精力评分、赋能事件、耗能事件、保存按钮;只记一个分数也能保存。底部折叠的"更多"(默认收起)里有情绪、压力、睡眠、锻炼(有 / 没有 / 未记录)、饮食、今天的调整与感受、随手记当下精力、备注、沿用上次评分。
+- **账户**(近期收支,底部导航第二项):最近 7 个自然日的赋能总分减耗能总分,与"今天自评精力"并排但分开展示;提供按日、构成、按周明细,以及"你常用的充电方式"。
+- **趋势**:精力、情绪、压力、睡眠时长、近期收支的曲线,7 / 30 / 90 天和全部,7 天移动平均,高低点标注,背景带可切换时令 / 生理周期 / 无,周与月对比。曲线只在这里,首页不放。
+- **洞察**:
+  - 关联洞察:两组样本分别判断,同一天和次日两种视角;生理周期按四个阶段分组比较。
+  - 回看与线索:胃部文字搜索、状态与低谷的伴随、适应行为的感受汇总,每条都附样本量,可点开原始记录。
+- **设置**:近期收支阈值、事件标签管理(分值、收藏)、饮食与身体标签、添加到主屏幕说明、JSON 导出导入、示例数据载入与清除、提醒说明。
+- **PWA**:可添加到 iPhone 主屏幕,全屏运行,离线可用。
+
+## 技术栈
+
+Next.js 16(App Router,静态导出)、TypeScript、Tailwind CSS 4、shadcn/ui、Recharts、Dexie(IndexedDB)。
+
+## 本地运行
+
+需要 Node.js 20 及以上。
+
+```bash
+npm install
+npm run dev
+```
+
+开发服务固定监听 `0.0.0.0:47231`,浏览器打开 <http://localhost:47231>,建议用手机视口(约 390px 宽)查看。如果通过其他域名或局域网地址访问开发服务,需要把它加入 `next.config.ts` 的 `allowedDevOrigins`。
+
+构建和预览静态站点:
+
+```bash
+npm run build   # 生成 out/ 静态站点
+npm run start   # 用 scripts/serve.mjs 在 0.0.0.0:47231 提供 out/ 目录
+npm run lint
+```
+
+`out/` 是纯静态文件,可以部署到任意静态托管(Vercel、GitHub Pages、Cloudflare Pages 等)。PWA 和离线功能需要通过 https 访问(本机 localhost 除外)。
+
+不设 `NEXT_PUBLIC_BASE_PATH` 时,站点在域名根路径运行(本地 `npm run start` 即 <http://127.0.0.1:47231/>)。部署到 GitHub Pages **项目站**子路径时,构建前设置该变量,例如 `/energy-log`。
+
+`.cursor/environment.json` 和 `.cursor/start.sh` 用于云端开发机启动时自动构建并在 tmux 中常驻预览服务。
+
+## 部署到 GitHub Pages
+
+适用于项目站地址形如 `https://<你的用户名>.github.io/energy-log/`(仓库名 `energy-log`)。
+
+### 1. 准备仓库
+
+1. 在 GitHub 新建仓库 `energy-log`(也可 fork 本仓库后改名)。
+2. 将本仓库代码推送到 `main`(或你使用的默认分支)。
+
+### 2. 本地构建(子路径)
+
+```bash
+npm ci
+NEXT_PUBLIC_BASE_PATH=/energy-log npm run build
+```
+
+构建产物在 `out/` 目录。其中已包含 `trailingSlash: true` 生成的各目录 `index.html`,可直接刷新子页面(如 `/energy-log/trends/`)。`public/.nojekyll` 会复制到 `out/.nojekyll`,避免 Jekyll 处理静态资源。
+
+本地按子路径预览(与 Pages 行为接近):
+
+```bash
+NEXT_PUBLIC_BASE_PATH=/energy-log npm run start
+# 浏览器打开 http://127.0.0.1:47231/energy-log/
+```
+
+### 3. 上传 `out/` 到 Pages
+
+任选一种方式:
+
+**方式 A: 单独分支 `gh-pages`(常见)**
+
+```bash
+cd out
+git init
+git add -A
+git commit -m "Deploy"
+git branch -M gh-pages
+git remote add origin git@github.com:<你的用户名>/energy-log.git
+git push -f origin gh-pages
+```
+
+在仓库 **Settings → Pages** 中,Source 选 **Deploy from a branch**,Branch 选 `gh-pages` / `/ (root)`。
+
+**方式 B: GitHub Actions(仓库已带 workflow)**
+
+仓库里有 [`.github/workflows/pages.yml`](.github/workflows/pages.yml),推送到 `main` 后会用 `NEXT_PUBLIC_BASE_PATH=/energy-log` 构建,并把 `out/` 发布到 Pages。
+
+在仓库 **Settings → Pages** 中,Source 选 **GitHub Actions**。第一次需要在 Actions 里允许 workflow 运行。
+
+保存后等待几分钟,访问 `https://<你的用户名>.github.io/energy-log/`。
+
+环境变量说明见 [`.env.example`](.env.example),不要提交真实 `.env`。
+
+### 4. 添加到 iPhone 主屏幕
+
+1. 用 **Safari** 打开上面的 https 地址(不要用微信内置浏览器)。
+2. 点底部 **分享** → **添加到主屏幕**。
+3. 从主屏幕图标打开,可全屏使用;数据仍只在本机,请定期在应用内 **设置 → 导出 JSON 备份**。
+
+PWA 的 manifest、图标与 Service Worker 已按子路径配置;离线访问需先在线打开过一次,让浏览器缓存壳资源。
+
+## 添加到 iPhone 主屏幕
+
+1. 用 Safari 打开部署后的 https 地址。
+2. 点底部的分享按钮,选"添加到主屏幕"。
+3. 之后从主屏幕图标打开,会全屏运行。
+
+只有添加到主屏幕后,iOS 才会比较稳定地保留网页数据。
+
+## 备份说明
+
+数据保存在这台设备浏览器的 IndexedDB 里。换手机、清除网站数据或长期不用都可能丢失,所以请定期在"设置 → 数据与备份"导出 JSON。导入支持"合并"(同一天以备份为准)和"替换全部"。
+
+首次打开且没有任何记录时,会自动载入约 16 周的示例数据方便先看效果。示例数据的清除和重新载入入口在设置页;清除只删除示例日,你自己的记录不受影响。
+
+## 产品规则
+
+阈值集中在设置页和 `src/lib/defaults.ts` 的 `RULES`,都可以按体感调整。所有分析只说"在你的记录中",不暗示因果,不下医学结论。
+
+- **缺失值**:没填就是 `null`(未记录,包括生理周期阶段),统计一律排除,不当作 0,也不默认成"舒适"或"没锻炼"。锻炼是"有 / 没有 / 未记录"三态;燥湿体感中"都不明显"(空选择)与"未记录"不同。
+- **不制造假记录**:上次评分只作参考(虚线圈),"沿用上次评分"只补全还没填的项目;事件标签每天重新选择。
+- **账户**(近期收支,底部导航第二项):最近 7 个自然日(含今天)的赋能总分减耗能总分,不衰减,不混入精力评分。它记录的是近期充电与消耗,不代表体力储备或还能撑多久。旧记录移出窗口造成的变化,不算当天的支出。
+- **档位**:默认收支大于等于 2 为充足,小于等于 −3 为透支,其间为偏低;三档只是提示,可在设置里调整。
+- **精力单独提示**:自评精力小于等于 2(可调)时,即使收支为正,也提示可以休息。
+- **常用充电方式**:早期数据不足以判断效果,先推荐收藏或近 30 天最常选的 3 项。
+- **趋势说明**:相邻自然日内"低谷到回到高于低谷线"才算一次可比较的波动,至少 3 次才生成"通常约几天后回升",否则显示中性说明。
+- **关联洞察**:
+  - 两组分别判断,各至少 7 条有效记录才展示差异,并同时显示两组数量;未记录不进入任何一组。
+  - 次日关联只匹配相邻自然日,不跨过漏记的日期。
+  - 生理周期按月经期、卵泡期、排卵期、黄体期分组比较精力:每个阶段至少 7 条有效记录才参与,至少两个阶段达标才展示差异,并同时显示各阶段的记录数;未记录阶段的日子不进入任何一组。
+  - 冷热先合并为"偏冷及以下""舒适""偏热及以上"再比较;冷热与燥湿的组合(冷加湿、热加燥等)同样要满足样本数。
+  - 胃部感受是自由文字,只用于回看和搜索,不参与自动统计。
+- **个人线索**:某种状态下精力偏低至少 3 次才列出;"尝试某调整后标记为好一些"至少有 3 次评价才引用;每条都附样本量并可点开原始记录。
+
+## 目录
+
+- `src/app/`:页面(今日、账户、当天记录、趋势、洞察、设置)
+- `src/components/energy/`:业务组件
+- `src/lib/types.ts`、`defaults.ts`:数据模型、默认标签与规则常量
+- `src/lib/db.ts`、`actions.ts`、`hooks.ts`:Dexie 存储、读写、实时查询
+- `src/lib/account.ts`、`trend.ts`、`analysis.ts`、`solar-terms.ts`:近期收支、趋势、关联与线索、节气计算
+- `src/lib/backup.ts`、`demo.ts`:JSON 导出导入、示例数据
+- `public/sw.js`、`public/manifest.webmanifest`、`public/icons/`:PWA
+- `scripts/serve.mjs`:静态站点预览服务

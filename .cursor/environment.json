@@ -1,0 +1,5 @@
+{
+  "name": "能量记录系统",
+  "install": "npm ci",
+  "start": "bash .cursor/start.sh"
+}
