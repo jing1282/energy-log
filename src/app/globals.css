@@ -128,3 +128,33 @@
     @apply font-sans;
   }
 }
+/* A quiet, local-only garden. No perpetual animation or streak pressure. */
+.plant-card { border:1px solid #dce6d5; border-radius:26px; overflow:hidden; background:linear-gradient(145deg,#f8f5e9,#e5eedc 65%,#dce9df); color:#365848; box-shadow:0 10px 30px -24px #467455; }
+.plant-heading { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:20px 20px 0; }
+.plant-eyebrow { font-size:10px; letter-spacing:2px; opacity:.65; margin-bottom:5px; }
+.plant-heading h2 { font-size:18px; font-weight:600; }
+.plant-heading h2 span { font-size:12px; font-weight:400; opacity:.7; }
+.plant-phase { border:1px solid #708d6e26; padding:5px 9px; border-radius:20px; font-size:10px; white-space:nowrap; }
+.plant-scene { max-width:360px; margin:-5px auto -5px; }
+.plant-scene svg { display:block; width:100%; height:190px; }
+.plant-caption { text-align:center; padding:0 12px; font-size:13px; }
+.plant-caption span { display:block; font-size:11px; opacity:.65; margin-top:6px; }
+.plant-feedback { text-align:center; font-size:11px; min-height:32px; padding:10px 14px; opacity:.75; }
+.plant-history { border-top:1px solid #77936c25; padding:0 18px 8px; }
+.plant-history summary { cursor:pointer; font-size:12px; padding:12px 0 6px; list-style:none; }
+.plant-history summary::-webkit-details-marker { display:none; }
+.plant-history summary span { float:right; }
+.plant-night { background:linear-gradient(145deg,#233f4c,#28494e 65%,#355952); border-color:#35535b; color:#e3eadb; }
+.plant-night .plant-phase { border-color:#c5dac733; }
+.plant-night .plant-history { border-color:#c5dac722; }
+.plant-leaf { transform-box:view-box; transform-origin:180px 125px; transition:transform 1.2s ease; }
+.plant-night .plant-left { transform:rotate(13deg); }
+.plant-night .plant-right { transform:rotate(-13deg); }
+.plant-grow { transform-origin:180px 155px; animation:plant-unfold 1.8s ease-out both; }
+.plant-water { animation:plant-drop 1.5s ease-in both; pointer-events:none; }
+@keyframes plant-drop { 0%{opacity:0;transform:translateY(-12px)} 15%{opacity:1} 80%{opacity:.9} 100%{opacity:0;transform:translateY(115px)} }
+@keyframes plant-unfold { 0%,45%{transform:scale(1)} 70%{transform:scale(1.025) rotate(-1deg)} 100%{transform:scale(1)} }
+.plant-still .plant-grow,.plant-still .plant-water { animation:none; }
+.plant-still .plant-water { display:none; }
+.plant-still .plant-leaf { transition:none; }
+@media(prefers-reduced-motion:reduce) { .plant-grow,.plant-water { animation:none!important; } .plant-water { display:none; } .plant-leaf { transition:none; } }

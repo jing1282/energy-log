@@ -12,6 +12,10 @@ export const RULES = {
 
 export const DEFAULT_SETTINGS: Settings = {
   key: "main",
+  plantMode: "auto",
+  plantMotion: "system",
+  plantDayStart: 7,
+  plantDayEnd: 21,
   plentyMin: 2,
   overdrawnMax: -3,
   lowEnergyMax: 2,
@@ -91,6 +95,7 @@ export function normalizeDay(raw: Partial<DayRecord> & { date: string }): DayRec
     points: e.points ?? 1,
     outcome: e.outcome ?? null,
   }));
+  if (Array.isArray(raw.savedCareTags)) day.savedCareTags = [...new Set(raw.savedCareTags.filter((id) => typeof id === "string"))];
   day.moments = raw.moments ?? [];
   return day;
 }

@@ -1,4 +1,4 @@
-const VERSION = "energy-v2";
+const VERSION = "energy-v3-plant";
 // 站点可能部署在子路径下(如 /energy-log/),以 sw.js 所在目录作为根。
 const BASE = new URL("./", self.location).pathname;
 const SHELL = [BASE, BASE + "manifest.webmanifest", BASE + "icons/icon-192.png"];
@@ -16,7 +16,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("energy-") && k !== VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });

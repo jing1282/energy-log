@@ -1,5 +1,6 @@
 "use client";
 
+import { PlantSettings } from "@/components/energy/plant-settings";
 import { DataBackup } from "@/components/energy/data-backup";
 import { LoadingBlocks, PageShell, SectionCard } from "@/components/energy/page-shell";
 import { InstallHint } from "@/components/energy/install-hint";
@@ -12,6 +13,9 @@ export default function SettingsPage() {
   if (!data) return <LoadingBlocks />;
   return (
     <PageShell title="设置" subtitle="规则、标签、备份与示例数据。">
+      <SectionCard title="小苗与日夜" hint="成长记录照顾自己的尝试，不代表身体电量">
+        <PlantSettings settings={data.settings} />
+      </SectionCard>
       <SectionCard title="近期收支与提示规则" hint="算法简单透明,阈值可调">
         <ThresholdSettings settings={data.settings} />
       </SectionCard>

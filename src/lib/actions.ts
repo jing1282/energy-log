@@ -1,3 +1,4 @@
+import { careTags } from "./growth";
 import { db, ensureInit } from "./db";
 import { DEFAULT_SETTINGS, DEFAULT_TAGS, emptyDay, normalizeDay } from "./defaults";
 import type { MetricKey } from "./defaults";
@@ -15,9 +16,13 @@ type Patch = Partial<DayRecord> | ((day: DayRecord) => Partial<DayRecord>);
 
 export async function updateDay(date: string, patch: Patch, touch = true) {
   await ensureInit();
-  await db.transaction("rw", db.days, async () => {
+  await db.transaction("rw", db.days, db.tags, async () => {
     const existing = await db.days.get(date);
     const day = existing ? normalizeDay(existing) : emptyDay(date);
+    if (day.savedCareTags === undefined) {
+      const tags = Object.fromEntries((await db.tags.toArray()).map((t) => [t.id, t]));
+      day.savedCareTags = careTags(day, tags);
+    }
     const delta = typeof patch === "function" ? patch(day) : patch;
     await db.days.put({
       ...day,
@@ -110,8 +115,19 @@ export const addMoment = (date: string, energy: number) =>
 export const removeMoment = (date: string, ts: number) =>
   updateDay(date, (d) => ({ moments: d.moments.filter((m) => m.ts !== ts) }));
 
-export const saveDay = (date: string) =>
-  updateDay(date, { savedAt: Date.now() }, false);
+export async function saveDay(date: string) {
+  await ensureInit();
+  return db.transaction("rw", db.days, db.tags, async () => {
+    const raw = await db.days.get(date);
+    if (!raw) return 0;
+    const day = normalizeDay(raw);
+    const tags = Object.fromEntries((await db.tags.toArray()).map((t) => [t.id, t]));
+    const before = careTags(day, tags);
+    const next = [...new Set(day.events.filter((e) => before.includes(e.tagId) || tags[e.tagId]?.kind === "gain").map((e) => e.tagId))];
+    await db.days.put({ ...day, savedAt: Date.now(), savedCareTags: next });
+    return day.demo ? 0 : next.filter((id) => !before.includes(id)).length;
+  });
+}
 
 export async function updateSettings(patch: Partial<Settings>) {
   await ensureInit();

@@ -29,6 +29,8 @@ export interface Moment {
 /** 每天一条记录。所有「未记录」一律为 null,统计时排除,不当作 0 或默认值。 */
 export interface DayRecord {
   date: string;
+  /** 已确认保存的照顾事件，不随草稿或负面反馈变化。 */
+  savedCareTags?: string[];
   energy: number | null;
   mood: number | null;
   stress: number | null;
@@ -56,6 +58,10 @@ export type Records = Record<string, DayRecord>;
 
 export interface Settings {
   key: "main";
+  plantMode?: "auto" | "day" | "night";
+  plantMotion?: "system" | "off";
+  plantDayStart?: number;
+  plantDayEnd?: number;
   plentyMin: number;
   overdrawnMax: number;
   lowEnergyMax: number;

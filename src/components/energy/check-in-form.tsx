@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { GrowthPlant } from "./growth-plant";
+import { useRef, useState } from "react";
 import { Check, ChevronDown, History, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddChip, Chip, Section } from "@/components/energy/ui-bits";
@@ -488,6 +489,10 @@ export function CheckInForm({
 }) {
   const date = record.date;
   const [open, setOpen] = useState(false);
+  const plantRef = useRef<HTMLDivElement>(null);
+  const [watering, setWatering] = useState({ tick: 0, count: 0 });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const active = data.tags.filter((t) => !t.archived || record.events.some((e) => e.tagId === t.id));
   const gains = active.filter((t) => t.kind === "gain");
   const drains = active.filter((t) => t.kind === "drain");
@@ -523,6 +528,8 @@ export function CheckInForm({
   const feedback = FEEDBACK[Number(date.slice(-2)) % FEEDBACK.length];
 
   return (
+    <>
+    <div ref={plantRef} className="scroll-mt-4"><GrowthPlant data={data} watering={watering} /></div>
     <Card className="rounded-[24px] border-0 bg-card/90 shadow-[0_10px_30px_-18px_oklch(0.4_0.06_180/0.5)] ring-0">
       <CardHeader className="pb-0">
         <div className="flex items-center justify-between">
@@ -600,8 +607,18 @@ export function CheckInForm({
         <div>
           <button
             type="button"
-            disabled={!hasAny || !dirty}
-            onClick={() => saveDay(date)}
+            disabled={!hasAny || !dirty || saving}
+            onClick={async () => {
+              setSaving(true); setSaveError("");
+              try {
+                const count = await saveDay(date);
+                if (count > 0) {
+                  plantRef.current?.scrollIntoView({ behavior: "instant", block: "start" });
+                  setWatering((w) => ({ tick: w.tick + 1, count }));
+                }
+              } catch { setSaveError("暂时没能保存，请再试一次。原有记录仍保留。"); }
+              finally { setSaving(false); }
+            }}
             className={cn(
               "flex h-12 w-full items-center justify-center gap-1.5 rounded-2xl text-[15px] font-semibold transition-all active:scale-[0.98]",
               hasAny && dirty ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "bg-muted text-muted-foreground",
@@ -618,6 +635,7 @@ export function CheckInForm({
               "保存记录"
             )}
           </button>
+          {saveError && <p role="alert" className="mt-2 text-sm text-destructive">{saveError}</p>}
           <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
             {hasAny ? "填写时已自动暂存在本机" : "只记一个分数也可以,不用填完"}
           </p>
@@ -657,5 +675,6 @@ export function CheckInForm({
         </div>
       </CardContent>
     </Card>
+    </>
   );
 }
