@@ -1,4 +1,4 @@
-const VERSION = "energy-v3-plant";
+const VERSION = "energy-v4-personal-events";
 // 站点可能部署在子路径下(如 /energy-log/),以 sw.js 所在目录作为根。
 const BASE = new URL("./", self.location).pathname;
 const SHELL = [BASE, BASE + "manifest.webmanifest", BASE + "icons/icon-192.png"];

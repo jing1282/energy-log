@@ -23,7 +23,7 @@ function TagRow({ tag }: { tag: Tag }) {
         <input
           aria-label="标签名"
           value={name}
-          maxLength={12}
+          maxLength={60}
           onChange={(e) => setName(e.target.value)}
           onBlur={() => name.trim() && name !== tag.name && saveTag({ ...tag, name: name.trim() })}
           className="h-10 min-w-0 flex-1 rounded-xl bg-card px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
@@ -110,7 +110,7 @@ function NewTag({ kind }: { kind: TagKind }) {
         aria-label="新标签名"
         placeholder="标签名称"
         value={name}
-        maxLength={12}
+        maxLength={60}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && submit()}
         className="h-10 min-w-0 flex-1 rounded-xl bg-muted px-3 text-sm outline-none"

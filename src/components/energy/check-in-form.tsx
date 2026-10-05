@@ -1,5 +1,6 @@
 "use client";
 
+import { PersonalEvents } from "./personal-events";
 import { GrowthPlant } from "./growth-plant";
 import { useRef, useState } from "react";
 import { Check, ChevronDown, History, Plus } from "lucide-react";
@@ -24,7 +25,6 @@ import {
   toggleBodyTag,
   toggleDiet,
   toggleDryWet,
-  toggleEvent,
   toggleField,
 } from "@/lib/actions";
 import { COLD_HOT, CYCLE_PHASES, METRICS, OUTCOME_LABEL, SLEEP_OPTIONS, type MetricKey } from "@/lib/defaults";
@@ -91,41 +91,12 @@ function ScaleRow({
   );
 }
 
-function TagChip({ tag, points, onToggle }: { tag: Tag; points?: number; onToggle: () => void }) {
-  const selected = points !== undefined;
-  const gain = tag.kind === "gain";
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onToggle}
-      className={cn(
-        "flex h-10 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-all active:scale-95",
-        selected
-          ? gain
-            ? "border-teal-600 bg-teal-600 text-white shadow-md shadow-teal-600/25"
-            : "border-orange-500 bg-orange-500 text-white shadow-md shadow-orange-500/25"
-          : "border-border bg-card text-foreground/80 hover:bg-accent",
-      )}
-    >
-      <span className="text-base leading-none">{tag.emoji}</span>
-      {tag.name}
-      {selected && (
-        <span className="rounded-full bg-white/25 px-1.5 text-[11px] tabular-nums">
-          {gain ? "+" : "−"}
-          {points}
-        </span>
-      )}
-    </button>
-  );
-}
-
 function PointsRow({ date, tag, points }: { date: string; tag: Tag; points: number }) {
   const gain = tag.kind === "gain";
   return (
     <div className="flex items-center gap-2.5 rounded-2xl bg-muted/70 py-1.5 pl-3 pr-1.5">
       <span className="text-base leading-none">{tag.emoji}</span>
-      <span className="flex-1 truncate text-[13px] font-medium">{tag.name}</span>
+      <span className="min-w-0 flex-1 break-words text-[13px] font-medium">{tag.name}</span>
       <div className="flex gap-1" role="radiogroup" aria-label={`${tag.name}的分值`}>
         {([1, 2, 3] as const).map((p) => (
           <button
@@ -496,7 +467,6 @@ export function CheckInForm({
   const active = data.tags.filter((t) => !t.archived || record.events.some((e) => e.tagId === t.id));
   const gains = active.filter((t) => t.kind === "gain");
   const drains = active.filter((t) => t.kind === "drain");
-  const pointsOf = (id: string) => record.events.find((e) => e.tagId === id)?.points;
   const chosen = record.events.filter((e) => data.tagMap[e.tagId]);
   const energyMeta = METRICS[0];
 
@@ -570,13 +540,9 @@ export function CheckInForm({
                 <Plus className="size-3.5" strokeWidth={3} />
               </span>
               赋能事件
-              <span className="text-[11px] font-normal text-muted-foreground">让我充电的事 · 存入</span>
+              <span className="text-[11px] font-normal text-muted-foreground">我为自己做的充电小事</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {gains.map((t) => (
-                <TagChip key={t.id} tag={t} points={pointsOf(t.id)} onToggle={() => toggleEvent(date, t)} />
-              ))}
-            </div>
+            <PersonalEvents key={`${date}-gain`} kind="gain" tags={gains} record={record} data={data} />
           </div>
 
           <div>
@@ -587,11 +553,7 @@ export function CheckInForm({
               耗能事件
               <span className="text-[11px] font-normal text-muted-foreground">消耗我的事 · 支出</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {drains.map((t) => (
-                <TagChip key={t.id} tag={t} points={pointsOf(t.id)} onToggle={() => toggleEvent(date, t)} />
-              ))}
-            </div>
+            <PersonalEvents key={`${date}-drain`} kind="drain" tags={drains} record={record} data={data} />
           </div>
 
           {chosen.length > 0 && (

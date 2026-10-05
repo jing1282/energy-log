@@ -178,3 +178,32 @@ export async function resetTagsToDefault() {
   await db.tags.clear();
   await db.tags.bulkAdd(DEFAULT_TAGS);
 }
+
+/** 创建标签与选入当天同一事务；同名重复提交只复用，不取消已有选择。 */
+export async function addPersonalEvent(date: string, text: string, kind: Tag["kind"]) {
+  const name = text.trim();
+  if (!name || name.length > 60) throw new Error("请填写 1 到 60 字的小事。");
+  await ensureInit();
+  return db.transaction("rw", db.days, db.tags, async () => {
+    const all = await db.tags.toArray();
+    const matching = all.filter((t) => t.kind === kind && t.name.trim() === name);
+    const existing = matching.find((t) => !t.archived) ?? matching[0];
+    const tag: Tag = existing ? { ...existing, archived: false } : {
+      id: crypto.randomUUID(), name, emoji: kind === "gain" ? "✨" : "•", kind,
+      points: 1, favorite: false, archived: false,
+      order: Math.max(0, ...all.map((t) => t.order)) + 1,
+    };
+    const raw = await db.days.get(date);
+    const day = raw ? normalizeDay(raw) : emptyDay(date);
+    const tagMap = Object.fromEntries(all.map((t) => [t.id, t]));
+    const savedCareTags = day.savedCareTags ?? careTags(day, tagMap);
+    await db.tags.put(tag);
+    if (!day.events.some((e) => e.tagId === tag.id)) {
+      await db.days.put({ ...day, savedCareTags,
+        events: [...day.events, { tagId: tag.id, points: tag.points, outcome: null }],
+        updatedAt: Date.now(),
+      });
+    }
+    return tag.name;
+  });
+}
